@@ -8,6 +8,10 @@ func ToTimeline(obj interface{}) Timeline {
 	return nil
 }
 
+func NewTimeline(obj interface{}, chronologic bool, idSize int) Timeline {
+	return nil
+}
+
 func makeTimelineEventsPath(timeline Timeline) [][]byte {
 	return [][]byte{boltTimelineBucketName, []byte(timeline.ID())}
 }

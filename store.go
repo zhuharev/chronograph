@@ -2,6 +2,7 @@ package chronograph
 
 import (
 	"bytes"
+	"sync"
 
 	"github.com/Unknwon/com"
 	"github.com/zhuharev/boltutils"
@@ -10,9 +11,26 @@ import (
 
 type Store interface {
 	TimelineCreate(Timeline) error
-	Timeline(limit int, startIDs ...string) ([]Event, error)
+	Timeline(timeline Timeline, limit int, startIDs ...string) ([]Event, error)
 	TimelineAppend(Timeline, Event) error
 	TimelineSize(Timeline) (int, error)
+}
+
+var (
+	stores = map[string]NewStoreFunc{}
+	mx     = sync.Mutex{}
+)
+
+func RegistreSore(name string, fn NewStoreFunc) {
+	mx.Lock()
+	stores[name] = fn
+	mx.Unlock()
+}
+
+type NewStoreFunc func(string) (Store, error)
+
+func NewStore(storeName, storeOptions string) (Store, error) {
+	return stores[storeName](storeOptions)
 }
 
 var (
@@ -28,9 +46,15 @@ type boltStore struct {
 	compressionEnabled bool
 }
 
-func NewBoltStore(path string) (bs *boltStore, err error) {
+func init() {
+	RegistreSore("bolt", func(setting string) (Store, error) {
+		return NewBoltStore(setting, true)
+	})
+}
+
+func NewBoltStore(path string, enableCompression bool) (bs *boltStore, err error) {
 	db, err := boltutils.Open(path, 0777, nil)
-	return &boltStore{db: db, compressionEnabled: true}, err
+	return &boltStore{db: db, compressionEnabled: enableCompression}, err
 }
 
 func (bs *boltStore) TimelineCreate(t Timeline) (err error) {
@@ -89,7 +113,7 @@ func (bs *boltStore) Timeline(timeline Timeline, limit int, startIDs ...string) 
 		// clear empty head
 
 		if !currentEqual {
-			events = append(events, defaultEvent{string(trimBytes(tmp))})
+			events = append(events, defaultEvent{string(trimBytes(tmp)), false})
 		}
 		if len(events) == limit {
 			break

@@ -16,11 +16,12 @@ func clean() {
 
 func TestTimeline(t *testing.T) {
 	defer clean()
-	bs, err := NewBoltStore(testDBName)
+	var err error
+	var bs Store
+	bs, err = NewBoltStore(testDBName, true)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	bs.compressionEnabled = true
 	timeline := defaultTimeline{
 		id:           "1",
 		eventsIDSize: 8,

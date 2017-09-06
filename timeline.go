@@ -15,6 +15,10 @@ type Timeline interface {
 	// EventsHasData() bool
 }
 
+type Timeliner interface {
+	ToTimeline() Timeline
+}
+
 type defaultTimeline struct {
 	id                string
 	orderCronological bool
@@ -36,20 +40,4 @@ func (dt defaultTimeline) OrderChronologic() bool {
 
 func (dt defaultTimeline) EventsIDSize() int {
 	return dt.eventsIDSize
-}
-
-type Event interface {
-	IDer
-}
-
-type defaultEvent struct {
-	id string
-}
-
-func (de defaultEvent) ID() string {
-	return de.id
-}
-
-func (de defaultEvent) IDIntable() bool {
-	return false
 }
